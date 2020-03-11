@@ -27,6 +27,7 @@ import android.os.Handler;
 
 import android.util.Log;
 import android.util.Range;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
@@ -142,7 +143,6 @@ class Camera2Session implements CameraSession {
             Arrays.asList(surface, mImageReaderFrameProcessing.getSurface()), new CaptureSessionCallback(), cameraThreadHandler);
       } catch (CameraAccessException e) {
         reportError("Failed to create capture session. " + e);
-        return;
       }
     }
 
@@ -170,14 +170,13 @@ class Camera2Session implements CameraSession {
       if(mImage == null || events ==null) {
         return;
       }
-//        mListener.onPictureTaken(reader.acquireLatestImage(), getRotation(), mPictureSize);//checkCameraSupport() == CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY ? getRotation():getOrientation(), mPictureSize);
-      events.onProcessingFrame(convertYUV420888ToNV21(mImage));
+      events.onProcessingFrame(convertYUV420888ToNV21(mImage), getTrackingFrameRotation());
       mImage.close();
     }
   }
 
-  //added by me
-  public static byte[] convertYUV420888ToNV21(Image imgYUV420) {
+  //added by Murodjon 2020.03.11
+  private static byte[] convertYUV420888ToNV21(Image imgYUV420) {
     // Converting YUV_420_888 data to NV21.
     try {
       byte[] data;
@@ -357,6 +356,9 @@ class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
     Logging.d(TAG, "start");
 
+    //added by Murodjon 2020.03.11
+    setOrientationListener(true);
+
     try {
       cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
     } catch (final CameraAccessException e) {
@@ -452,6 +454,9 @@ class Camera2Session implements CameraSession {
       events.onCameraClosed(null);
     }
 
+    //added by Murodjon 2020.03.11
+    setOrientationListener(false);
+
     Logging.d(TAG, "Stop done");
   }
 
@@ -475,6 +480,38 @@ class Camera2Session implements CameraSession {
       rotation = 360 - rotation;
     }
     return (cameraOrientation + rotation) % 360;
+  }
+
+  private int mLastOrientation = 0;
+  private OrientationEventListener orientationEventListener;
+  private void setOrientationListener(boolean isEnable) {
+    if (orientationEventListener == null) {
+
+      orientationEventListener = new OrientationEventListener(applicationContext) {
+        @Override
+        public void onOrientationChanged(int orientation) {
+          if (orientation == ORIENTATION_UNKNOWN) return;
+          mLastOrientation = (orientation + 45) / 90 * 90;
+        }
+      };
+    }
+    if (isEnable) {
+      orientationEventListener.enable();
+    } else {
+      orientationEventListener.disable();
+    }
+  }
+
+  /**
+   * Returns required orientation angle that the jpeg picture needs to be rotated to be displayed upright.
+   */
+  private int getTrackingFrameRotation() {
+    int degrees = mLastOrientation;
+    if (cameraCharacteristics==null)return 0;
+    if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
+      degrees = -degrees;
+    }
+    return (cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) + degrees + 360) % 360;
   }
 
   private void checkIsOnCameraThread() {

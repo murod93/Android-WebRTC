@@ -13,7 +13,7 @@ import java.util.List;
 public class FrameProcessingTask{
     private final String TAG = this.getClass().getSimpleName();
 
-    public FrameProcessingTask(){
+    private FrameProcessingTask(){
         startThread();
     }
 

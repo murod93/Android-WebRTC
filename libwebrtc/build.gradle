@@ -44,11 +44,4 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    implementation 'com.google.firebase:firebase-ml-vision:24.0.1'
-    implementation 'com.google.firebase:firebase-ml-vision-image-label-model:19.0.0'
-    implementation 'com.google.firebase:firebase-ml-vision-face-model:19.0.0'
-    implementation 'com.google.firebase:firebase-ml-model-interpreter:22.0.1'
-    implementation project(path: ':tracking')
-
 }

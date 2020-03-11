@@ -11,8 +11,10 @@
 package org.webrtc;
 
 import android.content.Context;
+import android.hardware.camera2.CameraCharacteristics;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.view.OrientationEventListener;
 
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 

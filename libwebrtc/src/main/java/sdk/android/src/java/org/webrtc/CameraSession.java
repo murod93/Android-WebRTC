@@ -33,7 +33,7 @@ interface CameraSession {
     void onCameraDisconnected(CameraSession session);
     void onCameraClosed(CameraSession session);
     void onFrameCaptured(CameraSession session, VideoFrame frame);
-    void onProcessingFrame(byte[] data);
+    void onProcessingFrame(byte[] data, int rotation);
     default void onProcessingFrame(ByteBuffer data){}
   }
 

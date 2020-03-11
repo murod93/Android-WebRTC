@@ -10,27 +10,11 @@
 
 package org.webrtc;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.hardware.Camera;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
-import androidx.annotation.NonNull;
-
-import com.example.tracking.DETECTOR;
-import com.example.tracking.FrameMetadata;
-import com.example.tracking.GraphicOverlay;
-import com.example.tracking.VisionImageProcessor;
-import com.example.tracking.face.FaceDetectionProcessor;
-import com.google.firebase.ml.vision.face.FirebaseVisionFace;
-
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
 
 @SuppressWarnings("deprecation")
 abstract class CameraCapturer implements CameraVideoCapturer {
@@ -48,155 +32,6 @@ abstract class CameraCapturer implements CameraVideoCapturer {
     private final CameraEnumerator cameraEnumerator;
     private final CameraEventsHandler eventsHandler;
     private final Handler uiThreadHandler;
-
-    // face tracking
-    private Thread processingThread;
-    private final Object processorLock = new Object();
-
-    private FrameProcessingRunnable processingRunnable = new FrameProcessingRunnable();
-    private VisionImageProcessor frameProcessor;
-
-    private GraphicOverlay mGraphicOverlay;
-
-    private DETECTOR detector = DETECTOR.FACE;
-
-    FaceDetectionProcessor.IFaceDetecterListener<List<FirebaseVisionFace>> faceDetecterListener = new FaceDetectionProcessor.IFaceDetecterListener<List<FirebaseVisionFace>>() {
-        @Override
-        public void onSuccess(@NonNull List<FirebaseVisionFace> results, @NonNull FrameMetadata frameMetadata, @NonNull GraphicOverlay graphicOverlay) {
-            Logging.e(TAG, "Face is detected: "+results.size());
-        }
-
-        @Override
-        public void onFailure(@NonNull Exception e) {
-            Logging.e(TAG, "onFailure");
-        }
-
-        @Override
-        public void onPreview() {
-        }
-
-        @Override
-        public void onCameraFailed() {
-
-        }
-    };
-
-    public void setMachineLearningFrameProcessor(VisionImageProcessor processor) {
-        synchronized (processorLock) {
-//            cleanScreen();
-            if (frameProcessor != null) {
-                frameProcessor.stop();
-            }
-            frameProcessor = processor;
-        }
-    }
-
-    private class FrameProcessingRunnable implements Runnable{
-
-        // This lock guards all of the member variables below.
-        private final Object lock = new Object();
-        private boolean active = true;
-
-        // These pending variables hold the state associated with the new frame awaiting processing.
-        private byte[] pendingFrameData;
-
-        FrameProcessingRunnable() {}
-
-        /**
-         * Releases the underlying receiver. This is only safe to do after the associated thread has
-         * completed, which is managed in camera source's release method above.
-         */
-        @SuppressLint("Assert")
-        void release() {
-            assert (processingThread.getState() == Thread.State.TERMINATED);
-        }
-
-        /** Marks the runnable as active/not active. Signals any blocked threads to continue. */
-        void setActive(boolean active) {
-            synchronized (lock) {
-                this.active = active;
-                lock.notifyAll();
-            }
-        }
-
-        /**
-         * Sets the frame data received from the camera. This adds the previous unused frame buffer (if
-         * present) back to the camera, and keeps a pending reference to the frame data for future use.
-         */
-        void setNextFrame(byte[] data) {
-            if (data == null)return;
-            synchronized (lock) {
-                if (pendingFrameData != null) {
-                    pendingFrameData = null;
-                }
-
-                pendingFrameData =  data;
-                // Notify the processor thread if it is waiting on the next frame (see below).
-                lock.notifyAll();
-            }
-        }
-
-        @SuppressLint("InlinedApi")
-        @SuppressWarnings("GuardedBy")
-        @Override
-        public void run() {
-            byte[] data;
-
-            while (true) {
-                Logging.d(TAG,"run");
-                synchronized (lock) {
-                    Logging.d(TAG,"run lock");
-                    while (active && (pendingFrameData == null)) {
-                        try {
-                            Logging.d(TAG,"run wait");
-                            // Wait for the next frame to be received from the camera, since we
-                            // don't have it yet.
-                            lock.wait();
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Frame processing loop terminated.", e);
-                            return;
-                        }
-                    }
-
-                    if (!active) {
-                        Logging.d(TAG,"!active");
-                        // Exit the loop once this camera source is stopped or released.  We check
-                        // this here, immediately after the wait() above, to handle the case where
-                        // setActive(false) had been called, triggering the termination of this
-                        // loop.
-                        return;
-                    }
-
-                    // Hold onto the frame data locally, so that we can use this for detection
-                    // below.  We need to clear pendingFrameData to ensure that this buffer isn't
-                    // recycled back to the camera before we are done using that data.
-                    data = pendingFrameData;
-                    pendingFrameData = null;
-                }
-
-                // The code below needs to run outside of synchronization, because this will allow
-                // the camera to add pending frame(s) while we are running detection on the current
-                // frame.
-                try {
-                    if (detector == DETECTOR.FACE) {
-                        synchronized (processorLock) {
-                            frameProcessor.process(
-                                    data,
-                                    new FrameMetadata.Builder()
-                                            .setWidth(width)
-                                            .setHeight(height)
-                                            .setRotation(0)
-                                            .setCameraFacing(Camera.CameraInfo.CAMERA_FACING_FRONT)//(isFrontCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK)
-                                            .build(),
-                                    mGraphicOverlay);
-                        }
-                    }
-                } catch (Throwable t) {
-                    Log.e(TAG, "Exception thrown from receiver.", t);
-                }
-            }
-        }
-    }
 
     private final CameraSession.CreateSessionCallback createSessionCallback =
             new CameraSession.CreateSessionCallback() {
@@ -271,10 +106,6 @@ abstract class CameraCapturer implements CameraVideoCapturer {
                     return;
                 }
                 eventsHandler.onCameraOpening(cameraName);
-                //added by me
-                processingThread = new Thread(processingRunnable);
-                processingRunnable.setActive(true);
-                processingThread.start();
             }
         }
 
@@ -339,15 +170,11 @@ abstract class CameraCapturer implements CameraVideoCapturer {
          * This function returns the frame sequences for processing
          */
         @Override
-        public void onProcessingFrame(byte[] data) {
+        public void onProcessingFrame(byte[] data, int rotation) {
             Logging.d(TAG, "onImageAvailable");
             if (eventsHandler!=null){
-                eventsHandler.onProcessingFrame(width, height, 1, 1, data);
+                eventsHandler.onProcessingFrame(width, height, rotation/90, 1, data);
             }
-//            if(processingRunnable!=null){
-//                    processingRunnable.setNextFrame(data);
-//            }
-
         }
     };
 
@@ -381,7 +208,6 @@ abstract class CameraCapturer implements CameraVideoCapturer {
 
     public CameraCapturer(String cameraName, CameraEventsHandler eventsHandler,
                           CameraEnumerator cameraEnumerator) {
-//        setMachineLearningFrameProcessor(new FaceDetectionProcessor(faceDetecterListener));
         if (eventsHandler == null) {
             eventsHandler = new CameraEventsHandler() {
                 @Override
