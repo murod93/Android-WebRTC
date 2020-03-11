@@ -1,0 +1,72 @@
+{
+  "project_info": {
+    "project_number": "1047254918433",
+    "firebase_url": "https://pivo-2c62c.firebaseio.com",
+    "project_id": "pivo-2c62c",
+    "storage_bucket": "pivo-2c62c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047254918433:android:db9a63817fafd825",
+        "android_client_info": {
+          "package_name": "com.dds.webrtc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1047254918433-t5q2ui08s0jpkm5tboni1vd3e9l04qvr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dds.webrtc",
+            "certificate_hash": "bab0c422e217574009439242ac8aeba0b48b658f"
+          }
+        },
+        {
+          "client_id": "1047254918433-j6hj4kaajthpeore4dnp04s3pl3qsft3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dds.webrtc",
+            "certificate_hash": "eb4ec12bf91e5d6f628fbe52872f42223f4fa5bb"
+          }
+        },
+        {
+          "client_id": "1047254918433-85otq8n7ti33noqgv2bo49kj3or6vai0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dds.webrtc",
+            "certificate_hash": "78a52e58ac9039f1efe41d962f342a85d6ef7efa"
+          }
+        },
+        {
+          "client_id": "1047254918433-fq11pp50frm097ge29i859fu9rs1m21n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDD-GASJdDF4XYx0iDrYePkeRewBtBiODc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1047254918433-fq11pp50frm097ge29i859fu9rs1m21n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1047254918433-ugdpsdq2mum784dbn50iblqdfqopbg2q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.dds.webrtc",
+                "app_store_id": "1434662778"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
